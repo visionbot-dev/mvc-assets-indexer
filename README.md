@@ -14,8 +14,9 @@ With this service, developers can build their own apps associated with assets on
 
 You can run your own service, or use our public deployments of this indexer directly.
 
-- mainnet: https://mvcapi.cyber3.space
-- testnet: https://mvcapi-testnet.cyber3.space
+- mainnet: https://api.microvisionchain.com/open-api-mvc/
+
+- DOCS: https://docs.microvisionchain.com/open-api-mvc/swagger/index.html#
 
 We have also built a [CLI](https://github.com/mvc-labs/mvc-cli) wallet that can work with this indexer, helping you send and receive SPACE and Tokens.
 
