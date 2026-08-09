@@ -144,6 +144,24 @@ export class TransactionService implements OnApplicationBootstrap {
     this.txBlockQueue.push(item);
   }
 
+  /**
+   * broadcast 内联索引：pushTx 成功后同步触发 mempool 索引（不等 ZMQ 链路）——
+   * 立即入库 + markSpentUtxos 标记 is_used，链式交易场景消除"下一笔看不到上一笔花费"的延迟。
+   * 幂等：oneMempoolTxProcessor 已有 txid 去重（已存在直接返回）。
+   */
+  async processBroadcastTx(txHex: string) {
+    if (!txHex) return false;
+    try {
+      const tx = mvc.Transaction(txHex);
+      const txid = tx.hash;
+      await this.oneMempoolTxProcessor(tx, txid, txHex);
+      return true;
+    } catch (e) {
+      console.log('processBroadcastTx e', e);
+      return false;
+    }
+  }
+
   private async oneMempoolTxProcessor(tx: any, txid: string, txHex: string) {
     let transactionEntity = await this.transactionEntityRepository.findOne({
       where: {
