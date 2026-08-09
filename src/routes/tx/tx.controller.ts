@@ -14,6 +14,14 @@ export class TxController {
   ) {}
 
   @ApiTags('tx')
+  @Get('/tx/:txid/raw')
+  async getRawTx(@Param('txid') txid: string) {
+    // 实时从节点 REST 拉 raw（mempool 交易也可拿）——SDK 索引延迟过滤（解析交易输入剔除已消费）依赖
+    const resp = await this.rpcService.getRawTxByRest(txid);
+    return { txid, hex: (resp && resp.data) || '' };
+  }
+
+  @ApiTags('tx')
   @Post('/tx/broadcast')
   async broadcastTx(@Body() broadcastTxDto: BroadcastTxDto) {
     try {
