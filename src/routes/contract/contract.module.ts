@@ -4,9 +4,10 @@ import { ContractController } from './contract.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TransactionEntity } from '../../entities/transaction.entity';
 import { TxOutEntity } from '../../entities/txOut.entity';
+import { TxOutNftEntity } from '../../entities/txOutNftEntity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TransactionEntity, TxOutEntity])],
+  imports: [TypeOrmModule.forFeature([TransactionEntity, TxOutEntity, TxOutNftEntity])],
   controllers: [ContractController],
   providers: [ContractService],
 })
