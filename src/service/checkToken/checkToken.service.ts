@@ -88,7 +88,7 @@ export class CheckTokenService {
     const txInUseOutpointMap = {};
     const txInUseOutpointList = [];
     const txInAmountMap = {};
-    await PromisePool.withConcurrency(10)
+    await PromisePool.withConcurrency(20)
       .for(txidList)
       .process(async (txid) => {
         const txInList = await this.txInEntityRepository.find({
@@ -111,7 +111,7 @@ export class CheckTokenService {
         }
       });
     const usedTxOutFtList = [];
-    await PromisePool.withConcurrency(10)
+    await PromisePool.withConcurrency(20)
       .for(txInUseOutpointList)
       .process(async (outpoint) => {
         const txOutFt = await this.txOutFtEntityRepository.findOne({
@@ -142,7 +142,7 @@ export class CheckTokenService {
       }
     });
     const saveTxOuts = [];
-    await PromisePool.withConcurrency(10)
+    await PromisePool.withConcurrency(20)
       .for(txOuts)
       .process(async (txOut) => {
         const txOutFt = await this.txOutFtEntityRepository.findOne({
@@ -233,7 +233,8 @@ export class CheckTokenService {
   }
 
   async checkFtDaemon() {
-    const limit = 100;
+    // ⚠️ 提速：每批 100→500（每 FT 4-5 次主键查询，批大 + 并发高显著提升 FT 收录吞吐）
+    const limit = 500;
     while (true) {
       try {
         const { txOuts, saveTxOuts } = await this.checkFt(limit);

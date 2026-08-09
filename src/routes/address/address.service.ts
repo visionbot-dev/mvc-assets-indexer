@@ -29,6 +29,7 @@ export class AddressService {
           AND tx_out.is_deleted = false
           AND tx.block_hash IS NOT NULL
           AND tx_out.script_type = 2
+          AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
     `,
       [addressHex],
     );
@@ -45,6 +46,7 @@ export class AddressService {
           AND tx_out.is_deleted = false 
           AND tx.block_hash IS NULL
           AND tx_out.script_type = 2
+          AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
     `,
       [addressHex],
     );
@@ -98,7 +100,8 @@ export class AddressService {
                 tx_out.address_hex = ?
                 AND tx_out.is_used = false
                 AND tx_out.is_deleted = false  
-                AND tx_out.script_type = 2 
+                AND tx_out.script_type = 2
+          AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE) 
                 AND tx_out.cursor_id > ?
                 LIMIT 100;
         `,

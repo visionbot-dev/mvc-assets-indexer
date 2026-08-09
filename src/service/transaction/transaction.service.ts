@@ -288,6 +288,9 @@ export class TransactionService implements OnApplicationBootstrap {
         await this.txOutFtEntityRepository.save(ftOutEntityList);
       } catch (e) {}
     }
+    // ⚠️ 即时标记：本笔交易输入对应的 tx_out 立即置 is_used（mvc-sdk 即时标记优点；
+    //    跨批次兜底由 useTxo 处理——若输入的创建交易尚未入库，此处匹配不到，useTxo 补标）
+    await this.markSpentUtxos(txInEntityList.map((x) => x.outpoint));
     for (const callBack of this.callBackQueueAfterTxProcess) {
       callBack(txid, tx, txHex, transactionEntity);
     }
@@ -488,6 +491,24 @@ export class TransactionService implements OnApplicationBootstrap {
         });
       });
     return txCountStatus;
+  }
+
+  /** 即时标记已花费 utxo（is_used=true）——分块 IN 更新，避免 max_allowed_packet 超限 */
+  private async markSpentUtxos(outpointList: string[]) {
+    if (!outpointList || outpointList.length === 0) return;
+    const chunkSize = 5000;
+    const chunks = [];
+    for (let i = 0; i < outpointList.length; i += chunkSize) {
+      chunks.push(outpointList.slice(i, i + chunkSize));
+    }
+    await PromisePool.withConcurrency(2)
+      .for(chunks)
+      .process(async (chunk) => {
+        await this.txOutEntityRepository.query(
+          `UPDATE tx_out SET is_used = TRUE WHERE is_used = FALSE AND is_deleted = FALSE AND outpoint IN (?)`,
+          [chunk],
+        ).catch(() => {});
+      });
   }
 
   async checkMemPool() {
@@ -803,6 +824,9 @@ export class TransactionService implements OnApplicationBootstrap {
                 await this.txOutFtEntityRepository.upsert(chunk, ['outpoint']);
               });
             const pResultList = await Promise.all([p1, p2, p3, p4, p5]);
+            // ⚠️ 即时标记：本批次全部交易输入对应 tx_out 置 is_used（批量保存后执行——
+            //    同区块内链式交易（创建+花费同批）此时 tx_out 已全部入库，标记完整命中）
+            await this.markSpentUtxos(txInEntityList.map((x) => x.outpoint));
             const useTime = (Date.now() - pResultListS) / 1000;
             totalUseTime += useTime;
             totalTxNumber += txList.length;
@@ -886,13 +910,13 @@ export class TransactionService implements OnApplicationBootstrap {
 
   async syncMemPoolDaemon() {
     while (true) {
-      // 30s sync once sync mempool
+      // ⚠️ zmq 丢消息补偿提速：20min→2min（rawmempool 全量对账更频繁，缩小最坏补偿窗口）
       try {
         await this.syncMemPool();
       } catch (e) {
         console.log('syncMemPoolDaemon', e);
       }
-      await sleep(20 * 60 * 1000);
+      await sleep(2 * 60 * 1000);
     }
   }
 
@@ -919,7 +943,8 @@ export class TransactionService implements OnApplicationBootstrap {
   }
 
   async useTxo() {
-    const bulkNumber = 4000;
+    // ⚠️ 兜底提速：4000→50000（入库即时标记已覆盖主流场景，此处仅兜底跨批次，可大批量）
+    const bulkNumber = 50000;
     const beforeU = new Date();
     const updateResult: { changedRows: number; info: string } =
       await this.txInEntityRepository.query(

@@ -44,6 +44,7 @@ WHERE
     AND tx_out_ft.codeHash = ?
     AND tx_out_ft.genesis = ?
     AND tx_out.check_token = 1
+    AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
 GROUP BY
     tx_out_ft.codeHash,
     tx_out_ft.genesis,
@@ -81,6 +82,7 @@ WHERE
     address_hex = ?
     AND tx_out.is_used = false
     AND tx_out.check_token = 1
+    AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
 GROUP BY
     tx_out_ft.codeHash,
     tx_out_ft.genesis,
@@ -150,6 +152,7 @@ WHERE
     AND tx_out.is_used = false
     AND tx_out.cursor_id > ?
     AND tx_out.check_token = 1
+    AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
     AND tx_out_ft.codeHash = ?
     AND tx_out_ft.genesis = ?
     LIMIT 100;`;
@@ -177,6 +180,7 @@ WHERE
     AND tx_out.is_used = false
     AND tx_out.cursor_id > ?
     AND tx_out.check_token = 1
+    AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
     LIMIT 100;`;
     }
     const utxoList = await this.transactionEntityRepository.query(sql, [
