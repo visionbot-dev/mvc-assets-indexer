@@ -6,6 +6,7 @@ import * as mvc from 'mvc-lib';
 import { mergeFtBalance } from '../../lib/utils';
 import { TxOutEntity } from '../../entities/txOut.entity';
 import { TxOutNftEntity } from '../../entities/txOutNftEntity';
+import { TxOutFtEntity } from '../../entities/txOutFtEntity';
 
 @Injectable()
 export class ContractService {
@@ -16,6 +17,8 @@ export class ContractService {
     private txOutEntityRepository: Repository<TxOutEntity>,
     @InjectRepository(TxOutNftEntity)
     private txOutNftEntityRepository: Repository<TxOutNftEntity>,
+    @InjectRepository(TxOutFtEntity)
+    private txOutFtEntityRepository: Repository<TxOutFtEntity>,
   ) {}
 
   async ftAddressBalance(address: string, codeHash: string, genesis: string) {
@@ -109,6 +112,146 @@ GROUP BY
       balanceListElement['address'] = address;
     }
     return mergeFtBalance(balanceList);
+  }
+
+  // ===================== FT 查询补齐（对齐 doc.json）=====================
+
+  /** GET /contract/ft/summary —— 全部 FT 系列目录（FtSummary[]） */
+  async ftSummary(cursor: string, size: string, sensibleId: string) {
+    const limit = Math.min(parseInt(size) || 20, 100);
+    const offset = Math.max(parseInt(cursor) || 0, 0);
+    const sidFilter = sensibleId ? `WHERE tx_out_ft.sensibleId = ?` : `WHERE tx_out_ft.txid IS NOT NULL`;
+    const params: any[] = sensibleId ? [sensibleId] : [];
+    const sql = `SELECT tx_out_ft.codeHash, tx_out_ft.genesis, tx_out_ft.name, tx_out_ft.symbol, tx_out_ft.decimal, tx_out_ft.sensibleId
+    FROM tx_out_ft
+    ${sidFilter}
+    GROUP BY tx_out_ft.codeHash, tx_out_ft.genesis, tx_out_ft.name, tx_out_ft.symbol, tx_out_ft.decimal, tx_out_ft.sensibleId
+    LIMIT ? OFFSET ?;`;
+    const totalSql = `SELECT COUNT(*) as total FROM (SELECT tx_out_ft.codeHash, tx_out_ft.genesis FROM tx_out_ft ${sidFilter} GROUP BY tx_out_ft.codeHash, tx_out_ft.genesis) t;`;
+    const rows = await this.txOutFtEntityRepository.query(sql, [...params, limit, offset]);
+    const totalRows = await this.txOutFtEntityRepository.query(totalSql, params);
+    return {
+      records: rows.map((row: any) => ({
+        codeHash: row.codeHash, genesis: row.genesis, name: row.name || '', symbol: row.symbol || '',
+        decimal: Number(row.decimal ?? 0), sensibleId: row.sensibleId || '',
+      })),
+      total: Number(totalRows[0]?.total || 0),
+    };
+  }
+
+  /** GET /contract/ft/{codeHash}/{genesis}/genesis —— 系列 genesis 信息（取该系列最新一条） */
+  async ftGenesisInfo(codeHash: string, genesis: string) {
+    const sql = `SELECT
+    tx_out_ft.codeHash, tx_out_ft.genesis, tx_out_ft.name, tx_out_ft.symbol, tx_out_ft.sensibleId, tx_out_ft.decimal,
+    tx_out_ft.value as valueString, tx_out.txid, tx_out.outputIndex as txIndex, tx_out.satoshis as satoshiString,
+    block.height
+    FROM tx_out_ft
+    JOIN tx_out ON tx_out_ft.outpoint = tx_out.outpoint
+    JOIN tx ON tx_out.txid = tx.txid
+    LEFT JOIN block ON tx.block_hash = block.hash
+    WHERE tx_out_ft.codeHash = ? AND tx_out_ft.genesis = ?
+      AND tx_out.is_deleted = false
+    ORDER BY tx_out.cursor_id DESC
+    LIMIT 1;`;
+    const rows = await this.txOutFtEntityRepository.query(sql, [codeHash, genesis]);
+    if (rows.length === 0) return null;
+    const row = rows[0];
+    return {
+      codeHash: row.codeHash, genesis: row.genesis, height: row.height != null ? Number(row.height) : 0,
+      name: row.name || '', symbol: row.symbol || '', satoshiString: String(row.satoshiString ?? 0),
+      sensibleId: row.sensibleId || '', txIndex: Number(row.txIndex ?? 0), txid: row.txid,
+      valueString: String(row.valueString ?? 0),
+    };
+  }
+
+  /** GET /contract/ft/{codeHash}/{genesis}/history —— 系列交易历史（含已花费；use_txid/use_tx_index 标记花费交易） */
+  async ftHistory(codeHash: string, genesis: string, cursor: string, size: string) {
+    const limit = Math.min(parseInt(size) || 20, 100);
+    const offset = Math.max(parseInt(cursor) || 0, 0);
+    const sql = `SELECT
+    tx_out_ft.codeHash, tx_out_ft.genesis, tx_out_ft.name, tx_out_ft.symbol, tx_out_ft.decimal, tx_out_ft.sensibleId,
+    tx_out_ft.value as valueString, tx_out.txid, tx_out.outputIndex as txIndex, tx_out.satoshis as satoshiString,
+    tx_out.is_used, tx_out.outpoint as flag, block.height,
+    (SELECT ti.txid FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE LIMIT 1) as use_txid,
+    (SELECT ti.inputIndex FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE LIMIT 1) as use_tx_index
+    FROM tx_out_ft
+    JOIN tx_out ON tx_out_ft.outpoint = tx_out.outpoint
+    JOIN tx ON tx_out.txid = tx.txid
+    LEFT JOIN block ON tx.block_hash = block.hash
+    WHERE tx_out_ft.codeHash = ? AND tx_out_ft.genesis = ?
+      AND tx_out.is_deleted = false
+    ORDER BY tx_out.cursor_id DESC
+    LIMIT ? OFFSET ?;`;
+    const countSql = `SELECT COUNT(*) as count FROM tx_out_ft
+    JOIN tx_out ON tx_out_ft.outpoint = tx_out.outpoint
+    WHERE tx_out_ft.codeHash = ? AND tx_out_ft.genesis = ? AND tx_out.is_deleted = false;`;
+    const rows = await this.txOutFtEntityRepository.query(sql, [codeHash, genesis, limit, offset]);
+    const countRows = await this.txOutFtEntityRepository.query(countSql, [codeHash, genesis]);
+    return {
+      count: Number(countRows[0]?.count || 0),
+      records: rows.map((row: any) => ({
+        codeHash: row.codeHash, decimal: Number(row.decimal ?? 0), flag: row.flag, genesis: row.genesis,
+        height: row.height != null ? Number(row.height) : 0, is_used: row.is_used ? 1 : 0,
+        name: row.name || '', satoshiString: String(row.satoshiString ?? 0), sensibleId: row.sensibleId || '',
+        symbol: row.symbol || '', txIndex: Number(row.txIndex ?? 0), txid: row.txid,
+        use_tx_index: row.use_tx_index != null ? Number(row.use_tx_index) : 0,
+        use_txid: row.use_txid || '', valueString: String(row.valueString ?? 0),
+      })),
+    };
+  }
+
+  /** GET /contract/ft/{codeHash}/{genesis}/owners —— 持有者列表（按地址聚合未花费余额） */
+  async ftOwners(codeHash: string, genesis: string, cursor: string, size: string) {
+    const limit = Math.min(parseInt(size) || 20, 100);
+    const offset = Math.max(parseInt(cursor) || 0, 0);
+    const sql = `SELECT
+    tx_out.address_hex, tx_out_ft.codeHash, tx_out_ft.genesis, tx_out_ft.name, tx_out_ft.symbol, tx_out_ft.decimal,
+    SUM(CAST(tx_out_ft.value AS UNSIGNED)) as balance
+    FROM tx_out_ft
+    JOIN tx_out ON tx_out_ft.outpoint = tx_out.outpoint
+    WHERE tx_out_ft.codeHash = ? AND tx_out_ft.genesis = ?
+      AND tx_out.is_used = false AND tx_out.is_deleted = false
+      AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
+    GROUP BY tx_out.address_hex, tx_out_ft.codeHash, tx_out_ft.genesis, tx_out_ft.name, tx_out_ft.symbol, tx_out_ft.decimal
+    ORDER BY balance DESC
+    LIMIT ? OFFSET ?;`;
+    const countSql = `SELECT COUNT(*) as count FROM (
+      SELECT tx_out.address_hex FROM tx_out_ft
+      JOIN tx_out ON tx_out_ft.outpoint = tx_out.outpoint
+      WHERE tx_out_ft.codeHash = ? AND tx_out_ft.genesis = ?
+        AND tx_out.is_used = false AND tx_out.is_deleted = false
+        AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
+      GROUP BY tx_out.address_hex
+    ) t;`;
+    const rows = await this.txOutFtEntityRepository.query(sql, [codeHash, genesis, limit, offset]);
+    const countRows = await this.txOutFtEntityRepository.query(countSql, [codeHash, genesis]);
+    const self = this;
+    return {
+      count: Number(countRows[0]?.count || 0),
+      records: rows.map((row: any) => ({
+        address: self._addrHexToStr(row.address_hex), balance: String(row.balance || 0),
+        codeHash: row.codeHash, decimal: Number(row.decimal ?? 0), genesis: row.genesis,
+        name: row.name || '', symbol: row.symbol || '',
+      })),
+    };
+  }
+
+  /** GET /contract/ft/{codeHash}/{genesis}/supply —— 供应量（⚠️ 降级：maxSupply/allowIncreaseIssues 未落库，
+   *  confirmed = 流通量（未花费余额总和）+ genesis 输出（totalSupply）近似，allowIncreaseIssues 无法判定恒 false） */
+  async ftSupply(codeHash: string, genesis: string) {
+    const sql = `SELECT COALESCE(SUM(CAST(tx_out_ft.value AS UNSIGNED)), 0) as circulating
+    FROM tx_out_ft
+    JOIN tx_out ON tx_out_ft.outpoint = tx_out.outpoint
+    WHERE tx_out_ft.codeHash = ? AND tx_out_ft.genesis = ?
+      AND tx_out.is_used = false AND tx_out.is_deleted = false;`;
+    const rows = await this.txOutFtEntityRepository.query(sql, [codeHash, genesis]);
+    const circulating = String(rows[0]?.circulating || 0);
+    return {
+      allowIncreaseIssues: false, // ⚠️ 未落库，无法判定（genesis OP_RETURN 解析才可得）
+      confirmed: circulating,
+      maxSupply: circulating, // ⚠️ 近似（无 maxSupply 数据）
+      unconfirmed: '0',
+    };
   }
 
   async ftAddressUtxo(

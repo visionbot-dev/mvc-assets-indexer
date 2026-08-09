@@ -108,6 +108,65 @@ export class ContractController {
     return this.contractService.nftSummary(cursor, size);
   }
 
+  // ===================== FT 补齐（对齐 doc.json）=====================
+
+  @ApiTags('contract')
+  @Get('/ft/summary')
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'size', required: false, type: String })
+  @ApiQuery({ name: 'sensibleId', required: false, type: String })
+  ftSummary(
+    @Query('cursor') cursor: string,
+    @Query('size') size: string,
+    @Query('sensibleId') sensibleId: string,
+  ) {
+    return this.contractService.ftSummary(cursor, size, sensibleId);
+  }
+
+  @ApiTags('contract')
+  @Get('/ft/:codeHash/:genesis/genesis')
+  ftGenesisInfo(
+    @Param('codeHash') codeHash: string,
+    @Param('genesis') genesis: string,
+  ) {
+    return this.contractService.ftGenesisInfo(codeHash, genesis);
+  }
+
+  @ApiTags('contract')
+  @Get('/ft/:codeHash/:genesis/history')
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'size', required: false, type: String })
+  ftHistory(
+    @Param('codeHash') codeHash: string,
+    @Param('genesis') genesis: string,
+    @Query('cursor') cursor: string,
+    @Query('size') size: string,
+  ) {
+    return this.contractService.ftHistory(codeHash, genesis, cursor, size);
+  }
+
+  @ApiTags('contract')
+  @Get('/ft/:codeHash/:genesis/owners')
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'size', required: false, type: String })
+  ftOwners(
+    @Param('codeHash') codeHash: string,
+    @Param('genesis') genesis: string,
+    @Query('cursor') cursor: string,
+    @Query('size') size: string,
+  ) {
+    return this.contractService.ftOwners(codeHash, genesis, cursor, size);
+  }
+
+  @ApiTags('contract')
+  @Get('/ft/:codeHash/:genesis/supply')
+  ftSupply(
+    @Param('codeHash') codeHash: string,
+    @Param('genesis') genesis: string,
+  ) {
+    return this.contractService.ftSupply(codeHash, genesis);
+  }
+
   @ApiTags('contract')
   @Get('/ft/address/:address/balance')
   @ApiQuery({ name: 'codeHash', required: false, type: String })
