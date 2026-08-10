@@ -16,6 +16,8 @@
     "t": "SERVICE_AUTH_WIF=KzN8u1axQbji33FEFPYkHpDJzAoyYksAbhGtZAhWrbcXZ2ARAbnd INDEXER_HOST=http://127.0.0.1:15000 ts-node src/scripts/t.ts",
     "start:mock": "PORT=15001 ts-node src/scripts/mockServer.ts",
     "ft": "ts-node src/scripts/ft.test.ts",
+    "broadcast:mempool": "ts-node src/scripts/broadcastMempoolToOfficial.ts",
+    "broadcast:mempool:watch": "ts-node src/scripts/broadcastMempoolToOfficial.ts --watch",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
