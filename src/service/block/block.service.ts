@@ -68,9 +68,8 @@ export class BlockService implements OnApplicationBootstrap {
     this.daemonForwardBlock().then();
     // download daemon
     this.daemonDownloadBlock().then();
-    // double check block, check tx
-    // ⚠️ 临时禁用：completed 块积压(3962)导致启动即高峰内存暴涨(OOM)，排查中
-    // this.daemonDoubleCheckBlock().then();
+    // double check block, check tx（双花/完整性二次校验；OOM 已修复，恢复启用）
+    this.daemonDoubleCheckBlock().then();
     // clearProcessingBlock -> process daemon
     this.clearProcessingBlock().then();
   }
@@ -801,9 +800,8 @@ export class BlockService implements OnApplicationBootstrap {
             .process(async (block) => {
               await this.doubleCheckBlock(block);
             });
-          if (completedBlockList.length === 0) {
-            await sleep(1000);
-          }
+          // ⚠️ 无论是否有块都等待：大批量积压时无缝高速循环会形成查询风暴（MySQL 压力 + 内存暴涨 OOM）
+          await sleep(1000);
         } else {
           await sleep(10000);
         }
