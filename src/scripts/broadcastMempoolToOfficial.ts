@@ -102,6 +102,7 @@ function isAlreadyKnownError(err: any): boolean {
     msg.includes('already in the mempool') ||
     msg.includes('txn-already-in-mempool') ||
     msg.includes('txn-already-in-chain') ||
+    msg.includes('txn-already-known') ||
     msg.includes('already known')
   );
 }
@@ -115,8 +116,15 @@ async function broadcastOne(hex: string, txid: string): Promise<'ok' | 'already'
       { headers: { 'Content-Type': 'application/json' }, timeout: 60000, validateStatus: () => true },
     );
     const body = resp.data || {};
-    if (resp.status >= 200 && resp.status < 300 && !(body && body.error)) return 'ok';
-    const errMsg = JSON.stringify(body.error || `HTTP ${resp.status}`);
+    if (resp.status >= 200 && resp.status < 300) {
+      // 成功判定：indexer 风格无 code 字段 / code===0
+      if (body.code === undefined || body.code === 0) return 'ok';
+      // 业务错误（官方 API：code=1 + message）
+      const errMsg = JSON.stringify(body.message || body);
+      if (isAlreadyKnownError(errMsg)) return 'already';
+      throw new Error(`广播 ${txid} 失败: ${errMsg}`);
+    }
+    const errMsg = JSON.stringify(body.error || body.message || `HTTP ${resp.status}`);
     if (isAlreadyKnownError(errMsg)) return 'already';
     throw new Error(`广播 ${txid} 失败: ${errMsg}`);
   }
