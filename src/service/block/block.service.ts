@@ -56,7 +56,7 @@ export class BlockService implements OnApplicationBootstrap {
       fs.mkdirSync(this.blockCacheFolder, { recursive: true });
     }
     this.zmqService.onHashBlock(this.hashBlockFromZmq.bind(this));
-    this.blockTimeMS = this.configService.get('blockTimeMS');
+    this.blockTimeMS = this.configService.get('blockTimeMS') || 1000;
     this.blockDownloadMS = this.configService.get('blockDownloadMS');
     this.syncFromHeight = parseInt(
       this.configService.get('syncFromHeight') || '0',
@@ -69,7 +69,8 @@ export class BlockService implements OnApplicationBootstrap {
     // download daemon
     this.daemonDownloadBlock().then();
     // double check block, check tx
-    this.daemonDoubleCheckBlock().then();
+    // ⚠️ 临时禁用：completed 块积压(3962)导致启动即高峰内存暴涨(OOM)，排查中
+    // this.daemonDoubleCheckBlock().then();
     // clearProcessingBlock -> process daemon
     this.clearProcessingBlock().then();
   }
@@ -705,6 +706,10 @@ export class BlockService implements OnApplicationBootstrap {
       }
       if (l === 0) {
         await sleep(this.blockDownloadMS);
+      } else {
+        // ⚠️ 处理过块时也短暂等待：状态标记(nostart→processing)在 mvc.Block 解析之后，
+        //    立即重跑会重复 load 同一块（并发竞态），空闲期反复解析导致内存累积 OOM
+        await sleep(100);
       }
     }
   }

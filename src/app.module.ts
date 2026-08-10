@@ -11,7 +11,6 @@ import { RpcModule } from './service/rpc/rpc.module';
 import { ZmqModule } from './service/zmq/zmq.module';
 import { BlockModule } from './service/block/block.module';
 import { TransactionModule } from './service/transaction/transaction.module';
-import { CheckTokenModule } from './service/checkToken/checkToken.module';
 // entities
 import { ConfigEntity } from './entities/config.entity';
 import { KeyEntity } from './entities/key.entity';
@@ -73,7 +72,6 @@ require('dotenv').config();
     TxModule,
     AddressModule,
     ContractModule,
-    CheckTokenModule,
     AdminModule,
     NotifyModule,
   ],
