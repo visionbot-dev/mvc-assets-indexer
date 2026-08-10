@@ -7,6 +7,13 @@
  *   npx ts-node src/scripts/broadcastMempoolToOfficial.ts          # 单次运行
  *   npx ts-node src/scripts/broadcastMempoolToOfficial.ts --watch  # 轮询模式（默认 30s）
  *
+ * 增量逻辑：
+ *   - 已推送过的交易 txid 记录到本地文件（默认 /tmp/mvc_broadcasted_txids.json），
+ *     重启后仍保留，避免重复推送
+ *   - 每轮只推送"新增"交易（当前 mempool - 已推送记录）
+ *   - 记录自动清理：已推送但已不在 mempool 中的 txid 会被删除（交易已确认/移除），
+ *     记录规模 = 当前 mempool 规模，不会膨胀
+ *
  * 配置（.env）：
  *   # 本地节点 RPC（读 mempool 用，复用 RPC_* 变量）
  *   RPC_HOST / RPC_PORT / RPC_USER / RPC_PASSWORD
@@ -18,12 +25,15 @@
  *   OFFICIAL_HTTP_URL=https://.../tx/broadcast
  *   # watch 模式轮询间隔（ms）
  *   BROADCAST_POLL_INTERVAL=30000
+ *   # 已推送记录文件路径
+ *   BROADCAST_RECORD_FILE=/tmp/mvc_broadcasted_txids.json
  *
  * 失败策略：already-known（"already in mempool/block chain"）跳过继续；
  *          其他错误中断（单次模式退出，watch 模式停止本轮等待下一轮）。
  */
 import axios from 'axios';
 import * as dotenv from 'dotenv';
+import * as fs from 'fs';
 
 dotenv.config();
 
@@ -40,6 +50,7 @@ const OFFICIAL_AUTH =
   ).toString('base64');
 const OFFICIAL_HTTP_URL = process.env.OFFICIAL_HTTP_URL || '';
 const POLL_INTERVAL = Number(process.env.BROADCAST_POLL_INTERVAL || 30000);
+const RECORD_FILE = process.env.BROADCAST_RECORD_FILE || '/tmp/mvc_broadcasted_txids.json';
 
 const WATCH = process.argv.includes('--watch');
 
@@ -62,6 +73,20 @@ async function rpc(url: string, auth: string, method: string, params: any[]) {
     throw new Error(`${method} error: ${JSON.stringify(data.error)}`);
   }
   return data.result;
+}
+
+// ---------------- 已推送记录（持久化，只存 txid） ----------------
+function loadRecord(): Set<string> {
+  try {
+    const data = JSON.parse(fs.readFileSync(RECORD_FILE, 'utf-8'));
+    return new Set(Array.isArray(data) ? data : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveRecord(record: Set<string>) {
+  fs.writeFileSync(RECORD_FILE, JSON.stringify([...record]));
 }
 
 // ---------------- 交易输入解析（纯 JS，无 mvc-lib 依赖） ----------------
@@ -149,15 +174,34 @@ async function broadcastOne(hex: string, txid: string): Promise<'ok' | 'already'
 async function runOnce(): Promise<void> {
   // 1. 获取本地 mempool
   const txidList: string[] = await rpc(LOCAL_RPC_URL, LOCAL_AUTH, 'getrawmempool', []);
-  if (txidList.length === 0) {
-    console.log(`[${new Date().toISOString()}] mempool 为空，无交易需要广播`);
+  const currentSet = new Set(txidList);
+
+  // 2. 加载已推送记录，并清理"已不在 mempool"的 txid（交易已确认/移除，无需保留）
+  const record = loadRecord();
+  let pruned = 0;
+  for (const txid of record) {
+    if (!currentSet.has(txid)) {
+      record.delete(txid);
+      pruned++;
+    }
+  }
+
+  // 3. 只处理新增交易（mempool - 已推送）
+  const newTxids = txidList.filter((t) => !record.has(t));
+  if (newTxids.length === 0) {
+    if (!WATCH) {
+      console.log(`[${new Date().toISOString()}] 无新增交易（记录 ${record.size} 笔，清理 ${pruned} 笔），无需广播`);
+    }
+    saveRecord(record);
     return;
   }
-  console.log(`[${new Date().toISOString()}] 本地 mempool 共 ${txidList.length} 笔交易，开始按依赖链排序...`);
+  console.log(
+    `[${new Date().toISOString()}] 新增 ${newTxids.length} 笔交易（mempool ${txidList.length}，已推送记录 ${record.size}，清理 ${pruned}），开始按依赖链排序...`,
+  );
 
-  // 2. 拉取全部 raw hex + 解析输入
+  // 4. 拉取新增交易 raw hex + 解析输入
   const txMap = new Map<string, { hex: string; inputs: { prevTxId: string; outputIndex: number }[] }>();
-  for (const txid of txidList) {
+  for (const txid of newTxids) {
     try {
       const hex = await rpc(LOCAL_RPC_URL, LOCAL_AUTH, 'getrawtransaction', [txid, false]);
       txMap.set(txid, { hex, inputs: parseTxInputs(hex) });
@@ -166,23 +210,22 @@ async function runOnce(): Promise<void> {
     }
   }
   if (txMap.size === 0) {
-    console.log('未能获取任何交易的 raw hex');
+    console.log('未能获取任何新增交易的 raw hex');
+    saveRecord(record);
     return;
   }
 
-  // 3. 构建依赖图（输入引用 mempool 内交易 = 依赖，被依赖者先广播）
-  const indegree = new Map<string, number>(); // txid → 依赖数（mempool 内）
+  // 5. 构建依赖图（仅限新增集合内互相引用；引用已推送/链上交易的输入不算依赖）
+  const indegree = new Map<string, number>(); // txid → 依赖数（新增集合内）
   const dependents = new Map<string, string[]>(); // txid → 依赖它的交易列表
-  const orderMap = new Map<string, number>();
-  let order = 0;
   for (const [txid, tx] of txMap) {
-    orderMap.set(txid, order++);
     let depCount = 0;
-    const seen = new Set<string>();
+    const seenDep = new Set<string>();
     for (const input of tx.inputs) {
       if (input.prevTxId === COINBASE_PREV) continue;
-      if (txMap.has(input.prevTxId) && !seen.has(input.prevTxId)) {
-        seen.add(input.prevTxId);
+      // 仅在新增集合内算依赖（已推送过的输入：官方已有，无需等待）
+      if (txMap.has(input.prevTxId) && !seenDep.has(input.prevTxId)) {
+        seenDep.add(input.prevTxId);
         depCount++;
         const list = dependents.get(input.prevTxId) || [];
         list.push(txid);
@@ -192,14 +235,13 @@ async function runOnce(): Promise<void> {
     indegree.set(txid, depCount);
   }
 
-  // 4. 拓扑分层（Kahn）：入度 0 的先广播（无 mempool 内依赖 = 链上输入 = 最旧）
-  let queue: string[] = [...txMap.keys()].filter((t) => indegree.get(t) === 0);
+  // 6. 拓扑分层（Kahn）：入度 0 的先广播（无新增集合内依赖 = 最旧）
+  const queue: string[] = [...txMap.keys()].filter((t) => indegree.get(t) === 0);
   let broadcasted = 0;
   let already = 0;
-  let cycle: string[] = [];
   while (queue.length > 0) {
     const batch = queue;
-    queue = [];
+    queue.length = 0;
     for (const txid of batch) {
       const tx = txMap.get(txid)!;
       try {
@@ -211,14 +253,16 @@ async function runOnce(): Promise<void> {
           already++;
           console.log(`  ⏭️  already-known 跳过 ${txid.slice(0, 16)}...`);
         }
+        record.add(txid); // 成功/already 都视为已推送
       } catch (e: any) {
-        // 非 already 错误：中断（用户策略）
+        // 非 already 错误：中断（用户策略）；失败的不入记录，下轮重试
         console.error(`\n❌ 广播 ${txid.slice(0, 16)}... 失败，中断: ${e.message}`);
         console.error(`   已广播 ${broadcasted} 笔，already-known ${already} 笔，剩余 ${txMap.size - broadcasted - already} 笔未处理`);
+        saveRecord(record);
         process.exitCode = 1;
         return;
       }
-      // 广播成功后，解除依赖它的交易的约束
+      // 广播（或已存在）后，解除依赖它的交易的约束
       for (const dep of dependents.get(txid) || []) {
         const d = indegree.get(dep)! - 1;
         indegree.set(dep, d);
@@ -227,12 +271,14 @@ async function runOnce(): Promise<void> {
     }
   }
   // 残留 = 环（mempool 内互相引用成环，正常不会出现）
-  cycle = [...txMap.keys()].filter((t) => indegree.get(t)! > 0);
+  const cycle = [...txMap.keys()].filter((t) => indegree.get(t)! > 0);
 
+  saveRecord(record);
   console.log(`\n===== 本次广播汇总 =====`);
-  console.log(`mempool 交易: ${txMap.size}`);
+  console.log(`新增交易: ${txMap.size}`);
   console.log(`广播成功: ${broadcasted}`);
   console.log(`already-known: ${already}`);
+  console.log(`已推送记录: ${record.size} 笔`);
   if (cycle.length > 0) {
     console.log(`⚠️ 存在依赖环未广播: ${cycle.length} 笔（${cycle.slice(0, 5).join(', ')}...）`);
   }
@@ -243,8 +289,7 @@ async function main() {
     await runOnce();
     return;
   }
-  console.log(`[${new Date().toISOString()}] 轮询模式启动，间隔 ${POLL_INTERVAL}ms（Ctrl+C 退出）`);
-  const seen = new Set<string>();
+  console.log(`[${new Date().toISOString()}] 轮询模式启动，间隔 ${POLL_INTERVAL}ms（Ctrl+C 退出），记录文件: ${RECORD_FILE}`);
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
