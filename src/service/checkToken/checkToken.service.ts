@@ -28,7 +28,9 @@ export class CheckTokenService {
     private txOutFtEntityRepository: Repository<TxOutFtEntity>,
     private readonly rpcService: RpcService,
   ) {
-    this.checkFtDaemon().then();
+    // ⚠️ 临时禁用 checkFtDaemon：裁剪同步下 FT 校验链不完整，大批 uncheck FT 反复校验导致内存暴涨（OOM）。
+    //     FT 查询已放宽 check_token<>2，不影响可用性。待修复校验逻辑后恢复。
+    // this.checkFtDaemon().then();
   }
 
   verifyFtToken(
