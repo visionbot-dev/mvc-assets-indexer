@@ -5,6 +5,7 @@ import { ObjLoader } from '../../lib/objLoader';
 import axios, { Method } from 'axios';
 import * as http from 'http';
 import * as https from 'https';
+import * as fs from 'fs';
 
 const httpAgent = new http.Agent({ keepAlive: true });
 const httpsAgent = new https.Agent({ keepAlive: true });
@@ -143,12 +144,18 @@ export class RpcService {
   public async getRawTxByRest(
     txid: string,
   ): Promise<AxiosResponse<any> | undefined> {
-    const url = `${this.rpcUrl}/rest/tx/${txid}.hex`;
+    // 节点 REST (/rest/tx/...) 在此环境不可用(404)，改用 RPC getrawtransaction，
+    // 返回格式保持兼容：resp.data 直接为 hex 字符串
     try {
-      return await axios.get(url, {
-        httpAgent: httpAgent,
-        httpsAgent: httpsAgent,
-      });
+      const now = Date.now();
+      const rpcData = {
+        jsonrpc: '1.0',
+        id: now,
+        method: 'getrawtransaction',
+        params: [txid, false],
+      };
+      const resp = await this.callRpcRaise(rpcData);
+      return { data: resp.data.result } as any;
     } catch (e) {
       console.log('getRawTxByRest e', e);
     }
@@ -159,7 +166,21 @@ export class RpcService {
     path: string,
   ): Promise<boolean> {
     try {
-      await this.objLoader.downloadToFile(blockHash, path);
+      // 直接用节点 RPC getblock 获取区块 hex（绕过 mvc-node-extend），写入缓存文件
+      const now = Date.now();
+      const rpcData = {
+        jsonrpc: '1.0',
+        id: now,
+        method: 'getblock',
+        params: [blockHash, 0],
+      };
+      const resp = await this.callRpcRaise(rpcData);
+      const hex = resp.data && resp.data.result;
+      if (!hex) {
+        return false;
+      }
+      // hex → 原始二进制写入（processOneBlock 按二进制解析）
+      fs.writeFileSync(path, Buffer.from(hex, 'hex'));
       return true;
     } catch (e) {
       return false;

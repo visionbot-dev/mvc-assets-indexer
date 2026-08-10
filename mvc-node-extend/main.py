@@ -8,7 +8,8 @@ import threading
 from datetime import datetime
 from base64 import encodebytes
 from json import JSONDecodeError
-from typing import BinaryIO, Optional, Literal, Union, Annotated
+from typing import BinaryIO, Optional, Literal, Union
+from typing_extensions import Annotated
 
 import plyvel
 import requests
@@ -109,7 +110,7 @@ class BlockBytesIO(TransactionBytesIO):
         super().__init__()
         self._handler = f
 
-    def read(self, __size: int | None = ...):
+    def read(self, __size: Optional[int] = None):
         return self._handler.read(__size)
 
     def read_bytes(self, byte_length: Optional[int] = None) -> bytes:

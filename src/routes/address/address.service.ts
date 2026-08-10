@@ -70,6 +70,70 @@ export class AddressService {
     };
   }
 
+  /** GET /address/{address}/tx —— 地址交易列表（flag 分页，size 默认 20） */
+  async tx(address: string, size: string, flag: string) {
+    const addressHex = mvc.Address(address).hashBuffer.toString('hex');
+    const limit = Math.min(parseInt(size) || 20, 100);
+    let cursorId = 0;
+    if (flag) {
+      const flagRecord = await this.txOutEntityRepository.findOne({
+        where: {
+          outpoint: flag,
+          is_deleted: false,
+        },
+      });
+      if (flagRecord) {
+        cursorId = flagRecord.cursor_id;
+      }
+    }
+    const records = await this.transactionEntityRepository.query(
+      `
+      SELECT
+          tx.txid,
+          tx_out.outpoint as flag,
+          block.height as block_height,
+          block.time as time,
+          tx.created_at as create_at
+      FROM
+          tx_out
+          JOIN tx ON tx_out.txid = tx.txid
+          LEFT JOIN block ON tx.block_hash = block.hash
+      WHERE
+          tx_out.address_hex = ?
+          AND tx_out.is_deleted = false
+          AND tx_out.cursor_id > ?
+      GROUP BY tx.txid, tx_out.outpoint, block.height, block.time, tx.created_at
+      ORDER BY MIN(tx_out.cursor_id) DESC
+      LIMIT ?;
+      `,
+      [addressHex, cursorId, limit],
+    );
+    for (const record of records) {
+      record['address'] = address;
+      record['genesis'] = '';
+    }
+    return records;
+  }
+
+  /** GET /address/{address}/txCount —— 地址交易数量 */
+  async txCount(address: string) {
+    const addressHex = mvc.Address(address).hashBuffer.toString('hex');
+    const rows = await this.transactionEntityRepository.query(
+      `
+      SELECT COUNT(DISTINCT tx.txid) as txCount
+      FROM
+          tx_out
+          JOIN tx ON tx_out.txid = tx.txid
+      WHERE
+          tx_out.address_hex = ?
+          AND tx_out.is_deleted = false
+      ;
+      `,
+      [addressHex],
+    );
+    return { txCount: Number(rows[0]?.txCount || 0) };
+  }
+
   async utxo(address: string, flag: string) {
     const addressHex = mvc.Address(address).hashBuffer.toString('hex');
     let cursorId = 0;
@@ -91,6 +155,7 @@ export class AddressService {
                 tx_out.txid as txid,
                 tx_out.outputIndex as outIndex,
                 tx_out.satoshis as value,
+                tx_out.satoshis as satoshi,
                 block.height as height
             FROM
                 tx_out
@@ -109,6 +174,10 @@ export class AddressService {
     );
     for (const record of records) {
       record['address'] = address;
+      record['satoshi'] = Number(record.satoshi);
+      record['value'] = Number(record.value);
+      record['outIndex'] = Number(record.outIndex);
+      record['height'] = Number(record.height);
     }
     return records;
   }

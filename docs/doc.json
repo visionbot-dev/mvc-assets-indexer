@@ -1,0 +1,1950 @@
+{
+    "schemes": ["https"],
+    "swagger": "2.0",
+    "info": {
+        "description": "Mvc API Service",
+        "title": "Mvc API Service",
+        "contact": {
+            "name": "API Support"
+        },
+        "version": "1.0"
+    },
+    "host": "",
+    "basePath": "/open-api-mvc",
+    "paths": {
+        "/address/{address}/balance": {
+            "get": {
+                "description": "Fetch address balance",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Address"
+                ],
+                "summary": "Fetch address balance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.FetchAddressBalanceResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/address/{address}/tx": {
+            "get": {
+                "description": "Fetch address transactions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Address"
+                ],
+                "summary": "Fetch address transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "flag",
+                        "name": "flag",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.FetchAddressTx"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/address/{address}/txCount": {
+            "get": {
+                "description": "Fetch address transaction count",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Address"
+                ],
+                "summary": "Fetch address transaction count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.FetchAddressTxCountResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/address/{address}/utxo": {
+            "get": {
+                "description": "Fetch address UTXO",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Address"
+                ],
+                "summary": "Fetch address UTXO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "flag",
+                        "name": "flag",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.FetchAddressUtxo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/block": {
+            "get": {
+                "description": "Fetch block list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Fetch block list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "last",
+                        "name": "last",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.BlockItem"
+                        }
+                    }
+                }
+            }
+        },
+        "/block/info": {
+            "get": {
+                "description": "Fetch block info",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Fetch block info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.BlockInfoResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/block/{hash}": {
+            "get": {
+                "description": "Fetch block detail",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Fetch block detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "hash",
+                        "name": "hash",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.BlockDetail"
+                        }
+                    }
+                }
+            }
+        },
+        "/block/{hash}/tx": {
+            "get": {
+                "description": "Fetch block transactions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Block"
+                ],
+                "summary": "Fetch block transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "hash",
+                        "name": "hash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.BlockTxInfo"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/ft/address/{address}/balance": {
+            "get": {
+                "description": "Fetch FT address balance",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract FT"
+                ],
+                "summary": "Fetch FT address balance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.ContractFtAddressBalanceResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/ft/address/{address}/utxo": {
+            "get": {
+                "description": "Fetch FT address UTXO",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract FT"
+                ],
+                "summary": "Fetch FT address UTXO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "flag",
+                        "name": "flag",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.ContractFtUtxo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/ft/summary": {
+            "get": {
+                "description": "Fetch FT summary list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract FT"
+                ],
+                "summary": "Fetch FT summary",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "sensibleId",
+                        "name": "sensibleId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.ContractFtSummaryResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/ft/{codeHash}/{genesis}/genesis": {
+            "get": {
+                "description": "Fetch FT genesis information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract FT"
+                ],
+                "summary": "Fetch FT genesis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.ContractFtGenesis"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/ft/{codeHash}/{genesis}/history": {
+            "get": {
+                "description": "Fetch FT history",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract FT"
+                ],
+                "summary": "Fetch FT history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.ContractFtHistoryResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/ft/{codeHash}/{genesis}/owners": {
+            "get": {
+                "description": "Fetch FT owners list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract FT"
+                ],
+                "summary": "Fetch FT owners",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.ContractFtOwnerResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/ft/{codeHash}/{genesis}/supply": {
+            "get": {
+                "description": "Fetch FT supply information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract FT"
+                ],
+                "summary": "Fetch FT supply",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.ContractFtSupply"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/address/{address}/count": {
+            "get": {
+                "description": "Fetch NFT address count",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT address count",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.NftCountResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/address/{address}/summary": {
+            "get": {
+                "description": "Fetch NFT address summary",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT address summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.NftSummaryResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/address/{address}/utxo": {
+            "get": {
+                "description": "Fetch NFT address UTXO",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT address UTXO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "flag",
+                        "name": "flag",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.ContractNftUtxo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/genesis/{codeHash}/{genesis}/utxo": {
+            "get": {
+                "description": "Fetch NFT genesis UTXO",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT genesis UTXO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "tokenIndex",
+                        "name": "tokenIndex",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "max",
+                        "name": "max",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "min",
+                        "name": "min",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.ContractNftUtxo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/sell/address/{address}/utxo": {
+            "get": {
+                "description": "Fetch NFT sell address UTXO",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT sell address UTXO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "flag",
+                        "name": "flag",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.ContractNftUtxo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/sell/genesis/{codeHash}/{genesis}/utxo": {
+            "get": {
+                "description": "Fetch NFT sell genesis UTXO",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT sell genesis UTXO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "tokenIndex",
+                        "name": "tokenIndex",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "max",
+                        "name": "max",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "min",
+                        "name": "min",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.ContractNftUtxo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/summary": {
+            "get": {
+                "description": "Fetch NFT summary",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT summary",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.NftSummaryResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/{codeHash}/{genesis}/genesis": {
+            "get": {
+                "description": "Fetch NFT genesis information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT genesis",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.ContractNftUtxo"
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/nft/{codeHash}/{genesis}/owners": {
+            "get": {
+                "description": "Fetch NFT owners list",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract NFT"
+                ],
+                "summary": "Fetch NFT owners",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "cursor",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "size",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.ContractNftOwner"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/contract/unique/genesis/{codeHash}/{genesis}/utxo": {
+            "get": {
+                "description": "Fetch Unique genesis UTXO",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contract Unique"
+                ],
+                "summary": "Fetch Unique genesis UTXO",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "codeHash",
+                        "name": "codeHash",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "genesis",
+                        "name": "genesis",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/respond.ContractUniqueUtxo"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tx/broadcast": {
+            "post": {
+                "description": "Broadcast transaction",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Broadcast transaction",
+                "parameters": [
+                    {
+                        "description": "transaction hex",
+                        "name": "hex",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.BroadcastTxReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.BroadcastTxResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/tx/broadcast/batch": {
+            "post": {
+                "description": "Broadcast multiple transactions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Broadcast transaction batch",
+                "parameters": [
+                    {
+                        "description": "transaction hex list",
+                        "name": "transactions",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/request.BroadcastTxReq"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.BroadcastTxBatchResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/tx/{txId}": {
+            "get": {
+                "description": "Fetch transaction detail",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Fetch transaction detail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "transaction id",
+                        "name": "txId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.FetchTxDetail"
+                        }
+                    }
+                }
+            }
+        },
+        "/tx/{txId}/raw": {
+            "get": {
+                "description": "Fetch transaction raw",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Transaction"
+                ],
+                "summary": "Fetch transaction raw",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "transaction id",
+                        "name": "txId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/respond.FetchTxRawResp"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "request.BroadcastTxReq": {
+            "type": "object",
+            "properties": {
+                "hex": {
+                    "description": "Transaction hex string",
+                    "type": "string"
+                }
+            }
+        },
+        "respond.AncestorInfo": {
+            "type": "object",
+            "properties": {
+                "txid": {
+                    "type": "string"
+                },
+                "vin": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.VinInfo"
+                    }
+                }
+            }
+        },
+        "respond.BlockDetail": {
+            "type": "object",
+            "properties": {
+                "bits": {
+                    "type": "integer"
+                },
+                "blockHash": {
+                    "type": "string"
+                },
+                "coinbase": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "inputCount": {
+                    "type": "integer"
+                },
+                "medianTime": {
+                    "type": "integer"
+                },
+                "merkleRoot": {
+                    "type": "string"
+                },
+                "miner": {
+                    "type": "string"
+                },
+                "minerAddress": {
+                    "type": "string"
+                },
+                "nonce": {
+                    "type": "integer"
+                },
+                "outputCount": {
+                    "type": "integer"
+                },
+                "prevBlockHash": {
+                    "type": "string"
+                },
+                "reward": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "txCount": {
+                    "type": "integer"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.BlockInfoResp": {
+            "type": "object",
+            "properties": {
+                "bestBlockHash": {
+                    "type": "string"
+                },
+                "blocks": {
+                    "type": "integer"
+                },
+                "chain": {
+                    "type": "string"
+                },
+                "chainwork": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "estimatedBlockSize": {
+                    "type": "integer"
+                },
+                "headers": {
+                    "type": "integer"
+                },
+                "medianTime": {
+                    "type": "integer"
+                },
+                "mempoolTxCount": {
+                    "type": "integer"
+                },
+                "mempoolUsage": {
+                    "type": "integer"
+                },
+                "networkHashPerSecond": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.BlockItem": {
+            "type": "object",
+            "properties": {
+                "blockHash": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "medianTime": {
+                    "type": "integer"
+                },
+                "miner": {
+                    "type": "string"
+                },
+                "reward": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "txCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.BlockTxInfo": {
+            "type": "object",
+            "properties": {
+                "num_tx": {
+                    "type": "integer"
+                },
+                "tx": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "respond.BroadcastTxBatchResp": {
+            "type": "object",
+            "properties": {
+                "evicted": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "invalid": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.InvalidTxInfo"
+                    }
+                },
+                "known": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "unconfirmed": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.UnconfirmedTxInfo"
+                    }
+                }
+            }
+        },
+        "respond.BroadcastTxResp": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "txid": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.CollidedTxInfo": {
+            "type": "object",
+            "properties": {
+                "hex": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractFtAddressBalanceResp": {
+            "type": "object",
+            "properties": {
+                "codeHash": {
+                    "type": "string"
+                },
+                "confirmed": {
+                    "type": "integer"
+                },
+                "confirmedString": {
+                    "type": "string"
+                },
+                "decimal": {
+                    "type": "integer"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "unconfirmed": {
+                    "type": "integer"
+                },
+                "unconfirmedString": {
+                    "type": "string"
+                },
+                "utxoCount": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractFtGenesis": {
+            "type": "object",
+            "properties": {
+                "codeHash": {
+                    "type": "string"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "satoshiString": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "txIndex": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                },
+                "valueString": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractFtHistory": {
+            "type": "object",
+            "properties": {
+                "codeHash": {
+                    "type": "string"
+                },
+                "decimal": {
+                    "type": "integer"
+                },
+                "flag": {
+                    "type": "string"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "is_used": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "satoshiString": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "txIndex": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                },
+                "use_tx_index": {
+                    "type": "integer"
+                },
+                "use_txid": {
+                    "type": "string"
+                },
+                "valueString": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractFtHistoryResp": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.ContractFtHistory"
+                    }
+                }
+            }
+        },
+        "respond.ContractFtOwnerItem": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "balance": {
+                    "type": "string"
+                },
+                "codeHash": {
+                    "type": "string"
+                },
+                "decimal": {
+                    "type": "integer"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractFtOwnerResp": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.ContractFtOwnerItem"
+                    }
+                }
+            }
+        },
+        "respond.ContractFtSummaryResp": {
+            "type": "object",
+            "properties": {
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.FtSummary"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.ContractFtSupply": {
+            "type": "object",
+            "properties": {
+                "allowIncreaseIssues": {
+                    "type": "boolean"
+                },
+                "confirmed": {
+                    "type": "string"
+                },
+                "maxSupply": {
+                    "type": "string"
+                },
+                "unconfirmed": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractFtUtxo": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "codeHash": {
+                    "type": "string"
+                },
+                "decimal": {
+                    "type": "integer"
+                },
+                "flag": {
+                    "type": "string"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "satoshi": {
+                    "type": "integer"
+                },
+                "satoshiString": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "txIndex": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "integer"
+                },
+                "valueString": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractNftOwner": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "codeHash": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "string"
+                },
+                "genesis": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractNftUtxo": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "codeHash": {
+                    "type": "string"
+                },
+                "flag": {
+                    "type": "string"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "metaOutputIndex": {
+                    "type": "integer"
+                },
+                "metaTxid": {
+                    "type": "string"
+                },
+                "satoshi": {
+                    "type": "integer"
+                },
+                "satoshiString": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "tokenIndex": {
+                    "description": "TokenSupply   json.Number `json:\"tokenSupply\"`",
+                    "type": "integer"
+                },
+                "tokenSupply": {
+                    "type": "integer"
+                },
+                "txIndex": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.ContractUniqueUtxo": {
+            "type": "object",
+            "properties": {
+                "codeHash": {
+                    "type": "string"
+                },
+                "customData": {
+                    "type": "string"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "satoshi": {
+                    "type": "string"
+                },
+                "satoshiString": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "txIndex": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.FetchAddressBalanceResp": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "confirmed": {
+                    "type": "integer"
+                },
+                "unconfirmed": {
+                    "type": "integer"
+                },
+                "utxoCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.FetchAddressTx": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "block_height": {
+                    "type": "integer"
+                },
+                "create_at": {
+                    "type": "string"
+                },
+                "flag": {
+                    "type": "integer"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.FetchAddressTxCountResp": {
+            "type": "object",
+            "properties": {
+                "txCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.FetchAddressUtxo": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "flag": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "outIndex": {
+                    "type": "integer"
+                },
+                "satoshi": {
+                    "type": "integer"
+                },
+                "txid": {
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Value    string `json:\"value\"`",
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.FetchTxDetail": {
+            "type": "object",
+            "properties": {
+                "txDetail": {
+                    "type": "object",
+                    "properties": {
+                        "blockHash": {
+                            "type": "string"
+                        },
+                        "height": {
+                            "type": "integer"
+                        },
+                        "timestamp": {
+                            "type": "integer"
+                        },
+                        "txid": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "respond.FetchTxRawResp": {
+            "type": "object",
+            "properties": {
+                "hex": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.FtSummary": {
+            "type": "object",
+            "properties": {
+                "codeHash": {
+                    "type": "string"
+                },
+                "decimal": {
+                    "type": "integer"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.InvalidTxInfo": {
+            "type": "object",
+            "properties": {
+                "collided_with": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.CollidedTxInfo"
+                    }
+                },
+                "reject_code": {
+                    "type": "integer"
+                },
+                "reject_reason": {
+                    "type": "string"
+                },
+                "txid": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.NftCountResp": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.NftSummary": {
+            "type": "object",
+            "properties": {
+                "codeHash": {
+                    "type": "string"
+                },
+                "genesis": {
+                    "type": "string"
+                },
+                "sensibleId": {
+                    "type": "string"
+                },
+                "tokenSupply": {
+                    "description": "TokenSupply json.Number `json:\"tokenSupply\"`",
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.NftSummaryResp": {
+            "type": "object",
+            "properties": {
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.NftSummary"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "respond.UnconfirmedTxInfo": {
+            "type": "object",
+            "properties": {
+                "ancestors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/respond.AncestorInfo"
+                    }
+                },
+                "txid": {
+                    "type": "string"
+                }
+            }
+        },
+        "respond.VinInfo": {
+            "type": "object",
+            "properties": {
+                "txid": {
+                    "type": "string"
+                },
+                "vout": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

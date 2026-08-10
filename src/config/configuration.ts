@@ -19,6 +19,7 @@ export default () => ({
   txProcessMS: process.env.TX_PROCESS_MS,
   blockDownloadMS: process.env.BLOCK_DOWNLOAD_MS,
   blockCacheNumber: process.env.BLOCK_CACHE_NUMBER,
+  syncFromHeight: process.env.SYNC_FROM_HEIGHT,
   zmqServer: process.env.ZMQ_SERVER,
   blockCacheFolder: process.env.BLOCK_CACHE_FOLDER,
   blockDbFile: process.env.BLOCK_DB_FILE,

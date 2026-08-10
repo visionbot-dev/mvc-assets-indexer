@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BlockEntity, BlockProcessStatus } from '../../entities/block.entity';
-import { In, IsNull, LessThan, Repository } from 'typeorm';
+import { In, IsNull, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { RpcService } from '../rpc/rpc.service';
 import { TransactionEntity } from '../../entities/transaction.entity';
 import { ConfigService } from '@nestjs/config';
@@ -30,6 +30,8 @@ export class BlockService implements OnApplicationBootstrap {
   private readonly blockCacheFolder: string;
   private readonly blockTimeMS: number;
   private readonly blockDownloadMS: number;
+  /** 同步裁剪起始高度（SYNC_FROM_HEIGHT）：只索引 >= 该高度的区块，默认 0 = 全量 */
+  private readonly syncFromHeight: number;
 
   constructor(
     @InjectRepository(BlockEntity)
@@ -56,6 +58,9 @@ export class BlockService implements OnApplicationBootstrap {
     this.zmqService.onHashBlock(this.hashBlockFromZmq.bind(this));
     this.blockTimeMS = this.configService.get('blockTimeMS');
     this.blockDownloadMS = this.configService.get('blockDownloadMS');
+    this.syncFromHeight = parseInt(
+      this.configService.get('syncFromHeight') || '0',
+    );
   }
 
   onApplicationBootstrap(): any {
@@ -117,6 +122,10 @@ export class BlockService implements OnApplicationBootstrap {
     const lastNostartHeightRowArray = await this.blockEntityRepository.find({
       where: {
         processStatus: BlockProcessStatus.downloaded,
+        height: MoreThanOrEqual(this.syncFromHeight),
+      },
+      order: {
+        height: 'asc',
       },
       take: 1000,
     });
@@ -127,6 +136,7 @@ export class BlockService implements OnApplicationBootstrap {
     const beforeProcess = await this.blockEntityRepository.find({
       where: {
         processStatus: BlockProcessStatus.processing,
+        height: MoreThanOrEqual(this.syncFromHeight),
       },
       take: 1,
     });
@@ -147,10 +157,14 @@ export class BlockService implements OnApplicationBootstrap {
         processStatus: BlockProcessStatus.downloading,
       },
     );
-    await this.rpcService.getRawBlockByRest(
+    const ok = await this.rpcService.getRawBlockByRest(
       downloadBlockRow.hash,
       blockCacheHexFilePath,
     );
+    if (!ok) {
+      // 下载失败（如 mvc-node-extend 尚未索引该块）——保持 downloading 等待下次重试，避免假下载
+      return;
+    }
     downloadBlockRow.processStatus = BlockProcessStatus.downloaded;
     await this.blockEntityRepository.update(
       {
@@ -185,13 +199,14 @@ export class BlockService implements OnApplicationBootstrap {
             BlockProcessStatus.nostart,
             BlockProcessStatus.downloading,
           ]),
+          height: MoreThanOrEqual(this.syncFromHeight),
         },
         order: {
           height: 'asc',
         },
         take: willCacheNumber,
       });
-    await PromisePool.withConcurrency(20)
+    await PromisePool.withConcurrency(5)
       .for(downloadBlockRows)
       .process(async (value) => {
         try {
@@ -329,7 +344,7 @@ export class BlockService implements OnApplicationBootstrap {
     const hasProcess =
       selectArray.map((value) => value.processStatus)[0] ===
       BlockProcessStatus.processing;
-    const { results } = await PromisePool.withConcurrency(5)
+    const { results } = await PromisePool.withConcurrency(2)
       .for(selectArray)
       .process(async (blockEntity) => {
         return await this.processOneBlock(blockEntity);
@@ -599,6 +614,14 @@ export class BlockService implements OnApplicationBootstrap {
         }
       }
     } else {
+      if (blockLinked.length === 0) {
+        // 无新链块：仅 chaintips 标志缺失（链头新块尚未标记），修正标志即可，非真正 reorg
+        await this.blockEntityRepository.update(
+          { hash: dbRecord.hash },
+          { is_chaintips: true },
+        );
+        return;
+      }
       this.logger.debug('have reorg');
       const { reorgList }: { reorgList: BlockEntity[] } =
         await this.forwardReorg(dbRecord);

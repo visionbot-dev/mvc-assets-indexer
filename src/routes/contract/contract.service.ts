@@ -49,7 +49,7 @@ WHERE
     AND tx_out.is_used = false
     AND tx_out_ft.codeHash = ?
     AND tx_out_ft.genesis = ?
-    AND tx_out.check_token = 1
+    AND tx_out.check_token <> 2
     AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
 GROUP BY
     tx_out_ft.codeHash,
@@ -87,7 +87,7 @@ FROM
 WHERE
     address_hex = ?
     AND tx_out.is_used = false
-    AND tx_out.check_token = 1
+    AND tx_out.check_token <> 2
     AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
 GROUP BY
     tx_out_ft.codeHash,
@@ -297,7 +297,7 @@ WHERE
     address_hex = ?
     AND tx_out.is_used = false
     AND tx_out.cursor_id > ?
-    AND tx_out.check_token = 1
+    AND tx_out.check_token <> 2
     AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
     AND tx_out_ft.codeHash = ?
     AND tx_out_ft.genesis = ?
@@ -325,7 +325,7 @@ WHERE
     address_hex = ?
     AND tx_out.is_used = false
     AND tx_out.cursor_id > ?
-    AND tx_out.check_token = 1
+    AND tx_out.check_token <> 2
     AND NOT EXISTS (SELECT 1 FROM tx_in ti WHERE ti.outpoint = tx_out.outpoint AND ti.is_deleted = FALSE)
     LIMIT 100;`;
     }
@@ -539,5 +539,50 @@ WHERE
       })),
       total: Number(totalRows[0]?.total || 0),
     };
+  }
+
+  // ===================== NFT sell / unique（对齐 doc.json）=====================
+
+  /** GET /contract/nft/sell/address/{address}/utxo —— 地址在售 NFT utxo
+   *  ⚠️ 降级：当前未索引 sell 标记，返回该地址未花费 NFT utxo（limit 控制数量） */
+  async nftSellAddressUtxo(
+    address: string,
+    codeHash: string,
+    genesis: string,
+    limit: string,
+    flag: string,
+  ) {
+    const limitNum = Math.min(parseInt(limit) || 20, 100);
+    const list = await this.nftAddressUtxo(address, codeHash, genesis, flag);
+    return list.slice(0, limitNum);
+  }
+
+  /** GET /contract/nft/sell/genesis/{codeHash}/{genesis}/utxo —— 系列在售 NFT utxo
+   *  ⚠️ 降级：当前未索引 sell 标记，返回系列未花费 NFT utxo（tokenIndex 必填过滤） */
+  async nftSellGenesisUtxo(
+    codeHash: string,
+    genesis: string,
+    tokenIndex: string,
+    max: string,
+    min: string,
+  ) {
+    return this.nftGenesisUtxo(codeHash, genesis, tokenIndex, max, min);
+  }
+
+  /** GET /contract/unique/genesis/{codeHash}/{genesis}/utxo —— Unique 资产 utxo
+   *  ⚠️ 降级：当前未单独索引 unique 资产，从 NFT 数据映射（customData 未解析） */
+  async uniqueGenesisUtxo(codeHash: string, genesis: string) {
+    const list = await this.nftGenesisUtxo(codeHash, genesis, '', '', '');
+    return list.map((row: any) => ({
+      codeHash: row.codeHash,
+      customData: '',
+      genesis: row.genesis,
+      height: row.height,
+      satoshi: String(row.satoshi),
+      satoshiString: row.satoshiString,
+      sensibleId: row.sensibleId,
+      txIndex: row.txIndex,
+      txid: row.txid,
+    }));
   }
 }

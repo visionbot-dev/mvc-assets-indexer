@@ -21,6 +21,7 @@ async function bootstrap() {
       'https://github.com/cyber3-space',
       'george@cyber3.space',
     )
+    .addServer(`http://127.0.0.1:${process.env.PORT || 15000}`, 'Local')
     .addServer('https://mvcapi.cyber3.space')
     .addServer('https://mvcapi-testnet.cyber3.space')
     .addTag('block')
