@@ -346,10 +346,14 @@ WHERE
 
   // ===================== NFT 查询（对齐 doc.json respond.ContractNftUtxo）=====================
 
-  /** address_hex(hash160) → 地址字符串（MVC 主网 livenet） */
+  /** address_hex(hash160) → 地址字符串（按 NET 环境变量选择 livenet / testnet） */
   private _addrHexToStr(addressHex: string): string {
     try {
-      return new mvc.Address.fromPublicKeyHash(Buffer.from(addressHex, 'hex')).toString();
+      const network = process.env.NET === 'testnet' ? 'testnet' : 'livenet';
+      return new mvc.Address.fromPublicKeyHash(
+        Buffer.from(addressHex, 'hex'),
+        network,
+      ).toString();
     } catch (e) {
       return addressHex;
     }

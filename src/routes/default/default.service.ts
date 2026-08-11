@@ -17,11 +17,13 @@ export class DefaultService {
     private readonly rpcService: RpcService,
   ) {}
 
-  /** address_hex(hash160) → 地址字符串（MVC 主网 livenet） */
+  /** address_hex(hash160) → 地址字符串（按 NET 环境变量选择 livenet / testnet） */
   private _addrHexToStr(addressHex: string): string {
     try {
+      const network = process.env.NET === 'testnet' ? 'testnet' : 'livenet';
       return new mvc.Address.fromPublicKeyHash(
         Buffer.from(addressHex, 'hex'),
+        network,
       ).toString();
     } catch (e) {
       return addressHex;
