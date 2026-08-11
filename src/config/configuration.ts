@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
+require('dotenv').config({ path: process.env.ENV_FILE || '.env' });
 const getEnvTruthy = (key: string) => {
   const value = process.env[key];
   return (

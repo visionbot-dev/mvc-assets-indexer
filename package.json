@@ -11,6 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
+    "start:testnet": "ENV_FILE=.env.testnet node dist/main",
     "start:prod": "node dist/main",
     "admin": "INDEXER_ADMIN_WIF=KzN8u1axQbji33FEFPYkHpDJzAoyYksAbhGtZAhWrbcXZ2ARAbnd INDEXER_HOST=http://127.0.0.1:15000 ts-node src/scripts/admin.ts",
     "t": "SERVICE_AUTH_WIF=KzN8u1axQbji33FEFPYkHpDJzAoyYksAbhGtZAhWrbcXZ2ARAbnd INDEXER_HOST=http://127.0.0.1:15000 ts-node src/scripts/t.ts",
