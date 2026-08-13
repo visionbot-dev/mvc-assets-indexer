@@ -264,7 +264,20 @@ export class BlockService implements OnApplicationBootstrap {
     } catch (e) {
       console.log('new mvc.Block', e);
     }
-    if (!(block && verifyMerkle(block))) {
+    // ⚠️ 用节点权威 txid 列表做 merkle 校验（绕开 mvc-lib 对 coinbase version>=10
+    //    交易的解析 bug：Input.isNull 误判 → input.script null → Transaction.hash 崩溃）。
+    //    getblock <hash> 2 返回的 tx[].txid 是节点权威数据，不再依赖 mvc-lib 解析。
+    let txidList: string[] | undefined;
+    try {
+      const resp = await this.rpcService.getBlock(nostartRow.hash, 2);
+      const txs = resp?.data?.result?.tx;
+      if (Array.isArray(txs) && txs.length > 0) {
+        txidList = txs.map((t: any) => t && t.txid).filter(Boolean);
+      }
+    } catch (e) {
+      // 节点查询失败 → 回退旧逻辑（block.transactions），至少不会更差
+    }
+    if (!(block && verifyMerkle(block, txidList))) {
       // verify tx not pass, change status to nostart
       this.logger.debug(
         `update block from ${nostartRow.hash} to nostart, verifyMerkle not pass`,

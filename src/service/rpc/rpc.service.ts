@@ -186,4 +186,28 @@ export class RpcService {
       return false;
     }
   }
+
+  /**
+   * 节点权威区块数据（verbose=2 含 txid 列表）——verifyMerkle 用（绕开 mvc-lib 解析 coinbase bug）。
+   * @param blockHash 区块 hash
+   * @param verbose 0=hex；1=详情；2=详情+完整交易（含 txid）
+   */
+  public async getBlock(
+    blockHash: string,
+    verbose = 2,
+  ): Promise<AxiosResponse<any> | undefined> {
+    try {
+      const now = Date.now();
+      const rpcData = {
+        jsonrpc: '1.0',
+        id: now,
+        method: 'getblock',
+        params: [blockHash, verbose],
+      };
+      return await this.callRpc(rpcData);
+    } catch (e) {
+      console.log('getBlock e', e);
+      return undefined;
+    }
+  }
 }
