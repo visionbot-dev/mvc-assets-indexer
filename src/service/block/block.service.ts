@@ -264,20 +264,25 @@ export class BlockService implements OnApplicationBootstrap {
     } catch (e) {
       console.log('new mvc.Block', e);
     }
-    // ⚠️ 用节点权威 txid 列表做 merkle 校验（绕开 mvc-lib 对 coinbase version>=10
-    //    交易的解析 bug：Input.isNull 误判 → input.script null → Transaction.hash 崩溃）。
-    //    getblock <hash> 2 返回的 tx[].txid 是节点权威数据，不再依赖 mvc-lib 解析。
+    // ⚠️ 测试网（NET=testnet）绕开 mvc-lib 对 coinbase version>=10 的解析 bug：
+    //    Input.isNull 误判 → input.script null → Transaction.hash 崩溃。
+    //    - 跳过 verifyMerkle 校验（信任节点权威数据）
+    //    - 交易 txid 列表改用节点权威数据（getblock verbose=2 的 tx[].txid）
+    //    主网（mainnet）保持原逻辑完全不变。
+    const isTestnet = process.env.NET === 'testnet';
     let txidList: string[] | undefined;
-    try {
-      const resp = await this.rpcService.getBlock(nostartRow.hash, 2);
-      const txs = resp?.data?.result?.tx;
-      if (Array.isArray(txs) && txs.length > 0) {
-        txidList = txs.map((t: any) => t && t.txid).filter(Boolean);
+    if (isTestnet) {
+      try {
+        const resp = await this.rpcService.getBlock(nostartRow.hash, 2);
+        const txs = resp?.data?.result?.tx;
+        if (Array.isArray(txs) && txs.length > 0) {
+          txidList = txs.map((t: any) => t && t.txid).filter(Boolean);
+        }
+      } catch (e) {
+        // 节点查询失败 → 回退旧逻辑（block.transactions），至少不会更差
       }
-    } catch (e) {
-      // 节点查询失败 → 回退旧逻辑（block.transactions），至少不会更差
     }
-    if (!(block && verifyMerkle(block, txidList))) {
+    if (!block || (!isTestnet && !verifyMerkle(block))) {
       // verify tx not pass, change status to nostart
       this.logger.debug(
         `update block from ${nostartRow.hash} to nostart, verifyMerkle not pass`,
@@ -301,9 +306,13 @@ export class BlockService implements OnApplicationBootstrap {
       },
     );
 
-    const txIdList = block.transactions.map(function (value: any) {
-      return value.hash;
-    });
+    // 测试网用节点权威 txid（绕开 mvc-lib 解析 coinbase 的 hash 崩溃），主网保持原逻辑
+    const txIdList =
+      isTestnet && txidList && txidList.length > 0
+        ? txidList
+        : block.transactions.map(function (value: any) {
+            return value.hash;
+          });
     for (let i = 0; i < txIdList.length; i++) {
       txIdIndexMap[txIdList[i]] = i;
     }

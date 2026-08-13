@@ -44,16 +44,11 @@ export const merkle = function (txidList: string[]) {
   return _merkle(txidBufferList);
 };
 
-export const verifyMerkle = function (block: any, txidList?: string[]) {
+export const verifyMerkle = function (block: any) {
   try {
-    // ⚠️ 优先使用外部传入的 txid 列表（节点权威数据，绕开 mvc-lib 对
-    //    coinbase version>=10 交易的解析 bug：Input.isNull 误判 → script null → hash 崩溃）
-    const txIdList =
-      txidList && txidList.length > 0
-        ? txidList
-        : block.transactions.map(function (value: any) {
-            return value.hash;
-          });
+    const txIdList = block.transactions.map(function (value: any) {
+      return value.hash;
+    });
     const fileMerkleRoot = merkle(txIdList);
     if (genesisMerkleRoot.equals(block.header.merkleRoot)) {
       return fileMerkleRoot.equals(genesisTrueMerkleRoot);
