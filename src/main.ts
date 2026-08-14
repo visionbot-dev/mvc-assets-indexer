@@ -33,7 +33,7 @@ async function bootstrap() {
   SwaggerModule.setup('', app, document, {
     customSiteTitle: 'MicroVisionChain API',
   });
-  await app.listen(parseInt(process.env.PORT));
+  await app.listen(parseInt(process.env.PORT), '0.0.0.0');
 }
 
 bootstrap();
